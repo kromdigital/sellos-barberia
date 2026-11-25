@@ -120,4 +120,12 @@ input::placeholder{color:#6f83a0}
 #reader{max-width:340px;margin:12px 0;border-radius:14px;overflow:hidden}
 #scanBtn{max-width:420px}
 
+/* Selector de ícono del sello */
+.picker-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:480px;margin-top:18px}
+.picker-row>span{font-weight:600;color:var(--mist)}
+.picker{display:flex;gap:10px}
+.picker button{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--bone);background:var(--ink-2);border:1.5px solid var(--line);transition:transform .15s,background .15s}
+.picker button:hover{transform:translateY(-2px)}
+.picker button.on{background:var(--bone);color:var(--ink);border-color:var(--bone);box-shadow:0 0 0 3px var(--ink),0 0 0 5px var(--red)}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

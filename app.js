@@ -32,7 +32,15 @@ function route() {
   if (id !== 'panel') stopScan();
   window.scrollTo(0, 0);
 }
-const SCISSORS = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 7.5 20 19M8.5 16.5 20 5"/></svg>';
+const sv = p => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICONS = {
+  tijeras: { label: 'Tijeras', svg: sv('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 7.5 20 19M8.5 16.5 20 5"/>') },
+  peine:   { label: 'Peine', svg: sv('<rect x="3" y="5" width="18" height="6" rx="2"/><path d="M6 11v7M10 11v7M14 11v7M18 11v7"/>') },
+  bigote:  { label: 'Bigote', svg: sv('<path d="M12 12c-1.5-2.5-3.5-3.5-6-3-2.5.5-4 2.5-4 5 2.5-1.5 5-1 7 .5 1.2.9 2 1.5 3 2.5 1-1 1.8-1.6 3-2.5 2-1.5 4.5-2 7-.5 0-2.5-1.5-4.5-4-5-2.5-.5-4.5.5-6 3z"/>') },
+  poste:   { label: 'Poste de barbero', svg: sv('<rect x="8" y="4" width="8" height="16" rx="3"/><path d="M8 9l8 3M8 14l8 3M10 2h4M10 22h4"/>') }
+};
+// El ícono elegido se guarda en este dispositivo
+const iconOf = p => { let k = ''; try { k = localStorage.getItem('icon_' + p) || ''; } catch {} return ICONS[k] ? k : 'tijeras'; };
 
 /* Horario: cámbialo aquí y se actualiza en la página y en el "Abierto ahora" */
 const SCHEDULE = [
@@ -79,6 +87,13 @@ if (matchMedia('(hover:hover) and (prefers-reduced-motion:no-preference)').match
   });
   mem.addEventListener('pointerleave', () => { mem.style.setProperty('--rx', '0deg'); mem.style.setProperty('--ry', '0deg'); });
 }
+
+$('#iconPicker').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]');
+  if (!b || !card) return;
+  try { localStorage.setItem('icon_' + card.phone, b.dataset.i); } catch {}
+  renderCard();
+});
 
 /* ---------- Configuración (en vivo) ---------- */
 onSnapshot(doc(db, 'config', 'main'), s => {
@@ -134,10 +149,14 @@ function renderCard() {
   $('#mMeta').textContent = `Socio ${c.phone.slice(-4)} · Desde ${c.since || today()}`;
   $('#mLevel').textContent = LEVELS.find(l => visits >= l[0])[1];
 
+  const ico = iconOf(c.phone);
   $('#stampGrid').innerHTML = Array.from({ length: g }, (_, i) => {
     const on = i < c.stamps, isNew = on && i >= seen;
-    return `<div class="stamp ${on ? 'on' : ''} ${isNew ? 'new' : ''} ${i === g - 1 ? 'last' : ''}">${on ? SCISSORS : (i === g - 1 ? '★' : i + 1)}</div>`;
+    return `<div class="stamp ${on ? 'on' : ''} ${isNew ? 'new' : ''} ${i === g - 1 ? 'last' : ''}">${on ? ICONS[ico].svg : (i === g - 1 ? '★' : i + 1)}</div>`;
   }).join('');
+
+  $('#iconPicker').innerHTML = Object.entries(ICONS).map(([k, v]) =>
+    `<button type="button" role="radio" aria-checked="${k === ico}" aria-label="${v.label}" title="${v.label}" data-i="${k}" class="${k === ico ? 'on' : ''}">${v.svg}</button>`).join('');
 
   const bar = $('#bar');
   bar.style.width = '0';
