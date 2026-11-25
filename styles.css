@@ -1,0 +1,81 @@
+:root{
+  --navy:#10243e; --navy-2:#183457; --paper:#f4f1ec; --muted:#a9b6c8;
+  --red:#c8372d; --blue:#2f6db5; --line:#2a4570;
+  --head:'Alfa Slab One',Georgia,serif; --body:'Figtree',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:70px}
+body{margin:0;background:var(--navy);color:var(--paper);font:16px/1.55 var(--body);padding-bottom:env(safe-area-inset-bottom,0)}
+a{color:inherit}
+:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+/* El poste de barbero: elemento memorable */
+.pole{height:10px;background:repeating-linear-gradient(-45deg,var(--red) 0 14px,var(--paper) 14px 28px,var(--blue) 28px 42px,var(--paper) 42px 56px)}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 20px;max-width:760px;margin:0 auto}
+.brand{font:1.25rem var(--head);text-decoration:none}
+nav{display:flex;gap:4px}
+nav a{padding:8px 12px;border-radius:6px;text-decoration:none;color:var(--muted);font-weight:600}
+nav a.on{color:var(--navy);background:var(--paper)}
+
+main{max-width:760px;margin:0 auto;padding:28px 20px 60px}
+h1{font:2.1rem/1.15 var(--head);margin:0 0 10px}
+h2{font:1.3rem var(--head);margin:36px 0 12px}
+.lead{color:var(--muted);max-width:46ch;margin:0 0 22px}
+
+.btn{display:inline-block;border:2px solid var(--paper);background:var(--paper);color:var(--navy);font:700 1rem var(--body);padding:12px 20px;border-radius:8px;cursor:pointer;text-decoration:none;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.btn.ghost{background:none;color:var(--paper);margin-top:24px}
+button:disabled{opacity:.35;cursor:not-allowed}
+
+.stack{display:grid;gap:14px;max-width:420px}
+label{display:grid;gap:6px;font-weight:600}
+input{width:100%;font:1rem var(--body);padding:12px;border-radius:8px;border:2px solid var(--line);background:var(--navy-2);color:var(--paper)}
+input::placeholder{color:#6f83a0}
+.msg{min-height:1.4em;margin:0;color:#ffb4ad}
+.msg.ok{color:#9fe3b0}
+
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.rows li{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+
+/* Tarjeta de sellos */
+.card{background:var(--navy-2);border:2px solid var(--line);border-radius:14px;overflow:hidden;margin-top:18px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:22px}
+.stamp{aspect-ratio:1;border-radius:50%;border:2px dashed var(--muted);display:grid;place-items:center;color:var(--muted);font-weight:700}
+.stamp.on{border:2px solid var(--paper);color:#fff;font-size:1.6rem;background:repeating-linear-gradient(-45deg,var(--red) 0 9px,var(--paper) 9px 18px,var(--blue) 18px 27px,var(--paper) 27px 36px);text-shadow:0 1px 3px #000a}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.info{margin:0;padding:0 22px 22px;font-weight:600}
+
+/* Panel */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stats div{background:var(--navy-2);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stats b{display:block;font:1.7rem var(--head)}
+.stats span{color:var(--muted);font-size:.9rem}
+.clients{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:10px}
+.clients li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--navy-2);border:1px solid var(--line);border-radius:10px;padding:12px}
+.clients small{display:block;color:var(--muted)}
+.acts{display:flex;gap:8px}
+.acts .btn{padding:8px 14px;font-size:.95rem}
+.acts .gold{background:#e2b43b;border-color:#e2b43b}
+
+@media (min-width:600px){.grid{grid-template-columns:repeat(4,1fr)}h1{font-size:2.6rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Tarjeta de socio */
+.member{background:var(--navy-2);border:2px solid var(--line);border-radius:16px;overflow:hidden;margin-top:14px;box-shadow:0 14px 30px #0006;transition:border-color .4s,box-shadow .4s}
+.member.ready{border-color:#e2b43b;box-shadow:0 0 0 3px #e2b43b55,0 14px 30px #0006}
+.member-body{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:20px 22px 4px}
+.shop{margin:0;color:var(--muted);font-weight:600}
+.member h1{font-size:1.6rem;margin:2px 0 4px;overflow-wrap:anywhere}
+.meta{margin:0 0 10px;color:var(--muted);font-size:.92rem}
+.level{display:inline-block;padding:3px 12px;border-radius:99px;background:var(--paper);color:var(--navy);font-weight:700;font-size:.9rem}
+.qr{flex:none;background:var(--paper);padding:8px;border-radius:10px;line-height:0}
+.stamp.new{animation:pop .6s .3s backwards}
+.progress{height:8px;margin:0 22px 12px;background:var(--navy);border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:repeating-linear-gradient(-45deg,var(--red) 0 8px,var(--paper) 8px 16px,var(--blue) 16px 24px,var(--paper) 24px 32px);transition:width .8s ease}
+.wide{display:block;text-align:center;margin-top:18px}
+.promo{margin:0;background:var(--navy-2);border-left:6px solid var(--red);border-radius:0 10px 10px 0;padding:14px 16px}
+
+#reader{max-width:340px;margin:12px 0;border-radius:10px;overflow:hidden}
+#scanBtn{width:100%;max-width:420px;margin:18px 0 0}

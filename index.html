@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tarjeta de sellos | Barbería</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <a href="#inicio" class="brand" id="brandName">Tu Barbería</a>
+  <nav>
+    <a href="#inicio">Inicio</a>
+    <a href="#tarjeta">Mi tarjeta</a>
+    <a href="#panel" id="navPanel" hidden>Panel</a>
+  </nav>
+</header>
+<div class="pole" aria-hidden="true"></div>
+
+<main>
+  <!-- INICIO -->
+  <section id="inicio" class="view">
+    <h1>Cada corte cuenta.</h1>
+    <p class="lead">Junta sellos con cada visita y tu siguiente corte va por la casa.</p>
+    <a class="btn red" href="#tarjeta">Ver mi tarjeta</a>
+
+    <h2>Servicios</h2>
+    <ul class="rows">
+      <li><span>Corte clásico</span><b>$150</b></li>
+      <li><span>Corte + barba</span><b>$220</b></li>
+      <li><span>Afeitado con toalla caliente</span><b>$130</b></li>
+      <li><span>Diseño y perfilado</span><b>$100</b></li>
+    </ul>
+
+    <h2>Horario y contacto</h2>
+    <ul class="rows">
+      <li><span>Lunes a sábado</span><b>10:00 – 20:00</b></li>
+      <li><span>Domingo</span><b>Cerrado</b></li>
+      <li><span>WhatsApp</span><b><a href="https://wa.me/520000000000" target="_blank" rel="noopener">33 0000 0000</a></b></li>
+    </ul>
+  </section>
+
+  <!-- MI TARJETA -->
+  <section id="tarjeta" class="view" hidden>
+    <div id="cardLogin">
+      <h1>Mi tarjeta</h1>
+      <p class="lead">Escribe tu número de celular para ver tus sellos.</p>
+      <form id="loginForm" class="stack">
+        <label>Celular (10 dígitos)
+          <input id="phone" type="tel" inputmode="numeric" maxlength="14" placeholder="33 1234 5678" required>
+        </label>
+        <label id="nameWrap" hidden>Tu nombre
+          <input id="name" type="text" maxlength="40" placeholder="Nombre y apellido">
+        </label>
+        <button class="btn red" type="submit">Ver mi tarjeta</button>
+        <p id="cardMsg" class="msg" role="status"></p>
+      </form>
+    </div>
+
+    <div id="cardView" hidden>
+      <article class="member" id="member">
+        <div class="pole" aria-hidden="true"></div>
+        <div class="member-body">
+          <div class="who">
+            <p class="shop" id="mShop"></p>
+            <h1 id="hello">Hola</h1>
+            <p class="meta" id="mMeta"></p>
+            <span class="level" id="mLevel"></span>
+          </div>
+          <div class="qr" id="qr" aria-label="Tu código QR personal"></div>
+        </div>
+        <div id="stampGrid" class="grid"></div>
+        <div class="progress"><i id="bar"></i></div>
+        <p id="cardInfo" class="info"></p>
+      </article>
+
+      <a class="btn red wide" href="https://wa.me/520000000000" target="_blank" rel="noopener">Agendar mi próxima visita</a>
+
+      <h2>Promociones</h2>
+      <p id="promo" class="promo"></p>
+
+      <h2>Mis premios</h2>
+      <ul id="prizes" class="rows"></ul>
+
+      <h2>Mis visitas</h2>
+      <ul id="history" class="rows"></ul>
+      <button id="logoutClient" class="btn ghost" type="button">No soy yo</button>
+    </div>
+  </section>
+
+  <!-- PANEL -->
+  <section id="panel" class="view" hidden>
+    <div id="pinBox">
+      <h1>Panel del barbero</h1>
+      <form id="pinForm" class="stack">
+        <label>Correo
+          <input id="email" type="email" autocomplete="username" required>
+        </label>
+        <label>Contraseña
+          <input id="pass" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="btn red" type="submit">Entrar</button>
+        <p id="pinMsg" class="msg" role="status"></p>
+      </form>
+    </div>
+
+    <div id="adminBox" hidden>
+      <h1>Panel</h1>
+      <div id="stats" class="stats"></div>
+      <button id="scanBtn" class="btn red wide" type="button">Escanear QR</button>
+      <div id="reader" hidden></div>
+      <p id="panelMsg" class="msg" role="status"></p>
+
+      <h2>Clientes</h2>
+      <input id="search" type="search" placeholder="Buscar por nombre o celular">
+      <ul id="clientList" class="clients"></ul>
+
+      <h2>Agregar cliente</h2>
+      <form id="addForm" class="stack">
+        <input id="newName" type="text" maxlength="40" placeholder="Nombre" required>
+        <input id="newPhone" type="tel" inputmode="numeric" maxlength="14" placeholder="Celular (10 dígitos)" required>
+        <button class="btn" type="submit">Agregar</button>
+        <p id="addMsg" class="msg" role="status"></p>
+      </form>
+
+      <h2>Configuración</h2>
+      <form id="cfgForm" class="stack">
+        <label>Nombre de la barbería <input id="shop" type="text" maxlength="40"></label>
+        <label>Sellos para el premio <input id="goal" type="number" min="3" max="20"></label>
+        <label>Premio <input id="reward" type="text" maxlength="40"></label>
+        <label>Promoción del momento <input id="promoIn" type="text" maxlength="80"></label>
+        <button class="btn" type="submit">Guardar cambios</button>
+        <p id="cfgMsg" class="msg" role="status"></p>
+      </form>
+      <button id="logoutAdmin" class="btn ghost" type="button">Cerrar sesión</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
