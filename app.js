@@ -32,9 +32,52 @@ function route() {
   if (id !== 'panel') stopScan();
   window.scrollTo(0, 0);
 }
+const SCISSORS = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 7.5 20 19M8.5 16.5 20 5"/></svg>';
+
+/* Horario: cámbialo aquí y se actualiza en la página y en el "Abierto ahora" */
+const SCHEDULE = [
+  { label: 'Lunes a sábado', days: [1, 2, 3, 4, 5, 6], open: 10, close: 20 },
+  { label: 'Domingo', days: [0] }
+];
+const DIAS = ['el domingo', 'el lunes', 'el martes', 'el miércoles', 'el jueves', 'el viernes', 'el sábado'];
+const fmt = h => String(h).padStart(2, '0') + ':00';
+const slot = d => SCHEDULE.find(s => s.days.includes(d) && s.open != null);
+
+function openState() {
+  const now = new Date(), t = now.getHours() + now.getMinutes() / 60, s = slot(now.getDay());
+  if (s && t >= s.open && t < s.close) return [true, `Abierto ahora · cierra a las ${fmt(s.close)}`];
+  for (let i = 0; i < 7; i++) {
+    const d = (now.getDay() + i) % 7, n = slot(d);
+    if (n && (i > 0 || t < n.open)) return [false, `Cerrado · abre ${i === 0 ? 'hoy' : i === 1 ? 'mañana' : DIAS[d]} a las ${fmt(n.open)}`];
+  }
+  return [false, 'Cerrado'];
+}
+function paintHome() {
+  const [open, text] = openState(), chip = $('#openNow');
+  chip.textContent = text; chip.classList.toggle('open', open);
+  $('#hours').innerHTML = SCHEDULE.map(s =>
+    `<li><span>${s.label}</span><b>${s.open != null ? fmt(s.open) + ' – ' + fmt(s.close) : 'Cerrado'}</b></li>`).join('');
+  $('#heroLead').textContent = `Junta ${cfg.goal} sellos y gana: ${cfg.reward}.`;
+}
+setInterval(paintHome, 60000);
+
 function brand() {
   $('#brandName').textContent = cfg.shop;
   document.title = 'Tarjeta de sellos | ' + cfg.shop;
+  paintHome();
+}
+
+/* La tarjeta se inclina un poco con el cursor (solo en pantallas con mouse) */
+const mem = $('#member');
+if (matchMedia('(hover:hover) and (prefers-reduced-motion:no-preference)').matches) {
+  mem.addEventListener('pointermove', e => {
+    const r = mem.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    mem.style.setProperty('--rx', ((.5 - y) * 8) + 'deg');
+    mem.style.setProperty('--ry', ((x - .5) * 10) + 'deg');
+    mem.style.setProperty('--mx', (x * 100) + '%');
+    mem.style.setProperty('--my', (y * 100) + '%');
+  });
+  mem.addEventListener('pointerleave', () => { mem.style.setProperty('--rx', '0deg'); mem.style.setProperty('--ry', '0deg'); });
 }
 
 /* ---------- Configuración (en vivo) ---------- */
@@ -93,7 +136,7 @@ function renderCard() {
 
   $('#stampGrid').innerHTML = Array.from({ length: g }, (_, i) => {
     const on = i < c.stamps, isNew = on && i >= seen;
-    return `<div class="stamp ${on ? 'on' : ''} ${isNew ? 'new' : ''}">${on ? '✂' : i + 1}</div>`;
+    return `<div class="stamp ${on ? 'on' : ''} ${isNew ? 'new' : ''} ${i === g - 1 ? 'last' : ''}">${on ? SCISSORS : (i === g - 1 ? '★' : i + 1)}</div>`;
   }).join('');
 
   const bar = $('#bar');
