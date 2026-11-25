@@ -33,8 +33,9 @@
 
 <main>
   <section id="panel" class="view" hidden>
-    <div id="pinBox">
+    <div id="pinBox" class="login">
       <h1>Panel del barbero</h1>
+      <p class="lead">Entra con tu correo y contraseña.</p>
       <form id="pinForm" class="stack">
         <label>Correo
           <input id="email" type="email" autocomplete="username" required>
@@ -48,48 +49,91 @@
     </div>
 
     <div id="adminBox" hidden>
-      <h1>Panel</h1>
+      <h1 id="panelHello">Panel</h1>
+      <p class="lead">Aquí manejas a tus clientes y sus sellos.</p>
       <div id="stats" class="stats"></div>
-      <button id="scanBtn" class="btn red wide" type="button">Escanear QR</button>
-      <div id="reader" hidden></div>
+
+      <div class="subnav">
+        <a href="#sec-clientes">Clientes</a>
+        <a href="#sec-escaner">Escanear</a>
+        <a href="#sec-agregar">Agregar</a>
+        <a href="#sec-config">Configuración</a>
+        <a href="#sec-enlaces">Enlaces</a>
+      </div>
       <p id="panelMsg" class="msg" role="status"></p>
 
-      <h2>Tu enlace para clientes</h2>
-      <input id="shareLink" readonly aria-label="Enlace para tus clientes">
+      <div class="panel-grid">
+        <section class="sec a-esc" id="sec-escaner">
+          <header><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg></span><h2>Dar sello con QR</h2></header>
+          <p class="hint">Apunta la cámara al código QR de la tarjeta del cliente.</p>
+          <button id="scanBtn" class="btn red wide" type="button">Escanear QR</button>
+          <div id="reader" hidden></div>
+        </section>
 
-      <h2>Tu enlace del panel</h2>
-      <input id="panelLink" readonly aria-label="Enlace del panel del barbero">
+        <section class="sec a-cli" id="sec-clientes">
+          <header><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.4c2 .7 3.5 2.6 3.5 5.6"/></svg></span><h2>Clientes</h2><span class="count" id="clientCount">0</span></header>
+          <input id="search" type="search" placeholder="Buscar por nombre o celular" aria-label="Buscar cliente">
+          <ul id="clientList" class="clients"></ul>
+        </section>
 
-      <h2>Clientes</h2>
-      <input id="search" type="search" placeholder="Buscar por nombre o celular">
-      <ul id="clientList" class="clients"></ul>
+        <section class="sec a-add" id="sec-agregar">
+          <header><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3 20c0-3.6 3-6 7-6 1.6 0 3 .4 4 1"/><path d="M18 14v6M15 17h6"/></svg></span><h2>Agregar cliente</h2></header>
+          <form id="addForm" class="stack">
+            <label>Nombre <input id="newName" type="text" maxlength="40" required></label>
+            <label>Celular (10 dígitos) <input id="newPhone" type="tel" inputmode="numeric" maxlength="14" placeholder="33 1234 5678" required></label>
+            <button class="btn" type="submit">Agregar cliente</button>
+            <p id="addMsg" class="msg" role="status"></p>
+          </form>
+        </section>
+      </div>
 
-      <h2>Agregar cliente</h2>
-      <form id="addForm" class="stack">
-        <input id="newName" type="text" maxlength="40" placeholder="Nombre" required>
-        <input id="newPhone" type="tel" inputmode="numeric" maxlength="14" placeholder="Celular (10 dígitos)" required>
-        <button class="btn" type="submit">Agregar</button>
-        <p id="addMsg" class="msg" role="status"></p>
-      </form>
+      <section class="sec" id="sec-config">
+        <header><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></span><h2>Configuración de la barbería</h2></header>
+        <form id="cfgForm" class="cfg">
+          <fieldset>
+            <legend>Datos de la barbería</legend>
+            <label>Nombre <input id="shop" type="text" maxlength="40"></label>
+            <label>WhatsApp (con lada del país) <input id="waIn" type="tel" maxlength="20" placeholder="+52 1 33 1234 5678"></label>
+            <label>Dirección <input id="addrIn" type="text" maxlength="80"></label>
+            <label>Instagram <input id="igIn" type="text" maxlength="40" placeholder="@tubarberia"></label>
+          </fieldset>
+          <fieldset>
+            <legend>Programa de sellos</legend>
+            <label>Sellos para el premio <input id="goal" type="number" min="3" max="20"></label>
+            <label>Premio <input id="reward" type="text" maxlength="40"></label>
+            <label>Promoción del momento <input id="promoIn" type="text" maxlength="80"></label>
+          </fieldset>
+          <fieldset>
+            <legend>Horario</legend>
+            <label>Hora de apertura (0 a 23) <input id="openH" type="number" min="0" max="23"></label>
+            <label>Hora de cierre (1 a 24) <input id="closeH" type="number" min="1" max="24"></label>
+            <label class="check"><input id="sundayIn" type="checkbox"> Abrimos los domingos</label>
+          </fieldset>
+          <fieldset>
+            <legend>Servicios</legend>
+            <label>Uno por línea: nombre | precio | descripción
+              <textarea id="svcIn" rows="6" maxlength="900"></textarea>
+            </label>
+          </fieldset>
+          <div class="save">
+            <button class="btn red" type="submit">Guardar cambios</button>
+            <p id="cfgMsg" class="msg" role="status"></p>
+          </div>
+        </form>
+      </section>
 
-      <h2>Configuración</h2>
-      <form id="cfgForm" class="stack">
-        <label>Nombre de la barbería <input id="shop" type="text" maxlength="40"></label>
-        <label>Sellos para el premio <input id="goal" type="number" min="3" max="20"></label>
-        <label>Premio <input id="reward" type="text" maxlength="40"></label>
-        <label>Promoción del momento <input id="promoIn" type="text" maxlength="80"></label>
-        <label>WhatsApp (con lada del país) <input id="waIn" type="tel" maxlength="20" placeholder="+52 1 33 1234 5678"></label>
-        <label>Dirección <input id="addrIn" type="text" maxlength="80"></label>
-        <label>Instagram <input id="igIn" type="text" maxlength="40" placeholder="@tubarberia"></label>
-        <label>Hora de apertura <input id="openH" type="number" min="0" max="23"></label>
-        <label>Hora de cierre <input id="closeH" type="number" min="1" max="24"></label>
-        <label class="check"><input id="sundayIn" type="checkbox"> Abrimos los domingos</label>
-        <label>Servicios (uno por línea: nombre | precio | descripción)
-          <textarea id="svcIn" rows="5" maxlength="900"></textarea>
-        </label>
-        <button class="btn" type="submit">Guardar cambios</button>
-        <p id="cfgMsg" class="msg" role="status"></p>
-      </form>
+      <section class="sec" id="sec-enlaces">
+        <header><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span><h2>Enlaces</h2></header>
+        <div class="linkrow">
+          <div class="lt"><b>Enlace para tus clientes</b><small>Pégalo en un QR para el mostrador o compártelo por WhatsApp.</small></div>
+          <div class="lc"><input id="shareLink" readonly aria-label="Enlace para tus clientes"><button class="btn copy" type="button" data-copy="shareLink">Copiar</button></div>
+        </div>
+        <div class="linkrow">
+          <div class="lt"><b>Enlace de tu panel</b><small>Solo para ti. No lo compartas con tus clientes.</small></div>
+          <div class="lc"><input id="panelLink" readonly aria-label="Enlace del panel del barbero"><button class="btn copy" type="button" data-copy="panelLink">Copiar</button></div>
+        </div>
+      </section>
+
       <button id="logoutAdmin" class="btn ghost" type="button">Cerrar sesión</button>
     </div>
   </section>

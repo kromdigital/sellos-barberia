@@ -12,7 +12,11 @@ const PANEL_PAGE = document.body.dataset.page === 'panel';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const digits = s => s.replace(/\D/g, '');
 const today = () => new Date().toLocaleDateString('es-MX');
-const say = (sel, text, ok) => { const el = $(sel); el.textContent = text; el.classList.toggle('ok', !!ok); };
+let toastTimer;
+const say = (sel, text, ok) => {
+  const el = $(sel); el.textContent = text; el.classList.toggle('ok', !!ok);
+  if (sel === '#panelMsg' && text) { clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.textContent = ''; }, 4500); }
+};
 const errText = e => e.code === 'permission-denied' ? 'No tienes permiso para hacer esto.'
   : e.code === 'unavailable' ? 'Sin conexión. Inténtalo de nuevo.' : (e.message || 'Ocurrió un error.');
 
@@ -261,14 +265,19 @@ function renderPanel() {
     `<div><b>${prizes}</b><span>Premios canjeados</span></div>`;
 
   const list = clients.filter(c => !q || c.name.toLowerCase().includes(q) || c.phone.includes(digits(q) || q));
+  $('#clientCount').textContent = clients.length;
+  $('#panelHello').textContent = cfg.shop;
   $('#clientList').innerHTML = list.map(c => {
-    const ready = c.stamps >= g;
-    return `<li><div><b>${esc(c.name)}</b><small>${esc(c.phone)} · ${c.stamps}/${g} sellos</small></div>
+    const ready = c.stamps >= g, ini = esc(c.name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase());
+    return `<li><div class="who"><span class="av">${ini}</span><div>
+        <b>${esc(c.name)}</b>
+        <small>${esc(c.phone)} · ${c.stamps}/${g} sellos${ready ? ' · <em>Premio listo</em>' : ''}</small>
+        <div class="mini"><i style="width:${Math.min(100, c.stamps / g * 100)}%"></i></div></div></div>
       <div class="acts">
         <button class="btn" data-a="add" data-p="${esc(c.phone)}" ${ready ? 'disabled' : ''}>Dar sello</button>
         <button class="btn gold" data-a="redeem" data-p="${esc(c.phone)}" ${ready ? '' : 'disabled'}>Canjear</button>
       </div></li>`;
-  }).join('') || '<li>No hay clientes con esa búsqueda.</li>';
+  }).join('') || `<li class="empty">${clients.length ? 'No hay clientes con esa búsqueda.' : 'Aún no tienes clientes. Agrega al primero o comparte tu enlace.'}</li>`;
 
   // No pisar lo que el barbero está escribiendo en Configuración
   if (!$('#cfgForm').contains(document.activeElement)) {
@@ -356,7 +365,15 @@ $('#cfgForm').addEventListener('submit', async e => {
   } catch (err) { say('#cfgMsg', errText(err)); }
 });
 
-document.querySelectorAll('#shareLink, #panelLink').forEach(i => i.addEventListener('click', e => { e.target.select(); try { navigator.clipboard.writeText(e.target.value); } catch {} }));
+document.querySelectorAll('[data-copy]').forEach(btn => btn.addEventListener('click', async () => {
+  const input = $('#' + btn.dataset.copy);
+  if (!input.value) return say('#panelMsg', 'Aún no hay enlace: tu cuenta no tiene una barbería asignada.');
+  try { await navigator.clipboard.writeText(input.value); }
+  catch { input.select(); try { document.execCommand('copy'); } catch {} }
+  const old = btn.textContent;
+  btn.textContent = '¡Copiado!'; btn.classList.add('done');
+  setTimeout(() => { btn.textContent = old; btn.classList.remove('done'); }, 1800);
+}));
 
 /* ---------- Inicio ---------- */
 window.addEventListener('hashchange', route);
