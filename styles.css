@@ -132,4 +132,9 @@ input[type=checkbox]{width:auto;accent-color:var(--red)}
 .picker button:hover{transform:translateY(-2px)}
 .picker button.on{background:var(--bone);color:var(--ink);border-color:var(--bone);box-shadow:0 0 0 3px var(--ink),0 0 0 5px var(--red)}
 
+/* Página del barbero */
+.tag{margin-left:12px;padding:2px 14px;border-radius:999px;background:var(--brass);color:var(--ink);font:700 .85rem var(--body)}
+body[data-page=panel] .pole{background:repeating-linear-gradient(-45deg,var(--brass) 0 12px,var(--ink) 12px 24px)}
+body[data-page=panel]{padding-bottom:40px}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

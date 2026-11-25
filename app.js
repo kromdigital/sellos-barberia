@@ -4,7 +4,11 @@ import { doc, getDoc, setDoc, onSnapshot, collection, runTransaction }
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-const $ = s => document.querySelector(s);
+// Cada página trae solo su parte del HTML (clientes en index.html, barbero en panel.html).
+// $() devuelve un objeto vacío cuando el elemento no existe en la página actual.
+const NOOP = new Proxy(function () {}, { get: (t, p) => (p === Symbol.toPrimitive ? () => '' : NOOP), set: () => true, apply: () => NOOP });
+const $ = s => document.querySelector(s) || NOOP;
+const PANEL_PAGE = document.body.dataset.page === 'panel';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const digits = s => s.replace(/\D/g, '');
 const today = () => new Date().toLocaleDateString('es-MX');
@@ -31,27 +35,17 @@ let user = null;
 let unsubCard = null, unsubList = null, scanner = null;
 
 /* ---------- Navegación ---------- */
-// El ícono de la pestaña, el color del navegador y el título cambian en el panel del barbero
-const ICON_SETS = {
-  cliente: ['favicon.svg', 'img/favicon-32.png', 'img/apple-touch-icon.png', '#0b1626'],
-  panel: ['favicon-panel.svg', 'img/favicon-panel-32.png', 'img/apple-touch-icon-panel.png', '#070d17']
-};
-function setIcons(kind) {
-  const [svg, png, apple, color] = ICON_SETS[kind];
-  $('#icoSvg').href = svg; $('#icoPng').href = png; $('#icoApple').href = apple;
-  document.querySelector('meta[name=theme-color]').content = color;
-}
 function setTitle() {
-  document.title = (location.hash === '#panel' ? 'Panel del barbero | ' : 'Tarjeta de sellos | ') + cfg.shop;
+  document.title = (PANEL_PAGE ? 'Panel del barbero | ' : 'Tarjeta de sellos | ') + cfg.shop;
 }
 
 function route() {
   const v = (location.hash || '#inicio').slice(1);
-  const id = ['inicio', 'tarjeta', 'panel'].includes(v) ? v : 'inicio';
+  const id = PANEL_PAGE ? 'panel' : (['inicio', 'tarjeta'].includes(v) ? v : 'inicio');
   document.querySelectorAll('.view').forEach(s => s.hidden = s.id !== id);
   document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + id));
   if (id !== 'panel') stopScan();
-  setIcons(id === 'panel' ? 'panel' : 'cliente'); setTitle();
+  setTitle();
   window.scrollTo(0, 0);
 }
 const sv = p => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -226,9 +220,8 @@ $('#pinForm').addEventListener('submit', async e => {
 });
 $('#logoutAdmin').addEventListener('click', () => signOut(auth));
 
-onAuthStateChanged(auth, async u => {
+if (PANEL_PAGE) onAuthStateChanged(auth, async u => {
   user = u;
-  $('#navPanel').hidden = !u;   // el enlace al panel solo aparece con sesión iniciada
   if (unsubList) unsubList();
   unsubList = null; clients = [];
   if (u) {
@@ -367,4 +360,4 @@ document.querySelectorAll('#shareLink, #panelLink').forEach(i => i.addEventListe
 
 /* ---------- Inicio ---------- */
 window.addEventListener('hashchange', route);
-watchShop(); route(); watchCard();
+watchShop(); route(); if (!PANEL_PAGE) watchCard();
