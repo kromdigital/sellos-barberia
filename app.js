@@ -12,24 +12,46 @@ const say = (sel, text, ok) => { const el = $(sel); el.textContent = text; el.cl
 const errText = e => e.code === 'permission-denied' ? 'No tienes permiso para hacer esto.'
   : e.code === 'unavailable' ? 'Sin conexión. Inténtalo de nuevo.' : (e.message || 'Ocurrió un error.');
 
-const DEFAULTS = { shop: 'Tu Barbería', goal: 8, reward: 'Corte gratis', promo: 'Martes de barba 2x1.' };
+const SERVICES = 'Corte clásico | 150 | Tijera o máquina, con acabado a navaja\nCorte y barba | 220 | El paquete completo, perfilado incluido\nAfeitado con toalla caliente | 130 | Navaja, vapor y bálsamo\nDiseño y perfilado | 100 | Líneas, cejas y detalles';
+const DEFAULTS = { shop: 'Tu Barbería', goal: 8, reward: 'Corte gratis', promo: 'Martes de barba 2x1.',
+  whatsapp: '', address: '', instagram: '', open: 10, close: 20, sunday: false, services: SERVICES };
+
+/* Barbería activa: viene del enlace (?b=nombre-de-la-barberia) y se recuerda en el dispositivo */
+let shopId = (new URLSearchParams(location.search).get('b') || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+try { if (shopId) localStorage.setItem('shop', shopId); else shopId = localStorage.getItem('shop') || ''; } catch {}
+const K = k => `${k}_${shopId}`;   // llaves de localStorage separadas por barbería
 const LEVELS = [[10, 'VIP'], [4, 'Frecuente'], [0, 'Nuevo']];
-const cref = p => doc(db, 'clients', p);
+const cref = p => doc(db, 'shops', shopId, 'clients', p);
 
 let cfg = { ...DEFAULTS };
-let me = ''; try { me = localStorage.getItem('me_phone') || ''; } catch {}
+let me = ''; try { me = localStorage.getItem(K('me_phone')) || ''; } catch {}
 let card = null;       // tarjeta del cliente (en vivo)
 let clients = [];      // lista de clientes (solo barbero, en vivo)
 let user = null;
 let unsubCard = null, unsubList = null, scanner = null;
 
 /* ---------- Navegación ---------- */
+// El ícono de la pestaña, el color del navegador y el título cambian en el panel del barbero
+const ICON_SETS = {
+  cliente: ['favicon.svg', 'img/favicon-32.png', 'img/apple-touch-icon.png', '#0b1626'],
+  panel: ['favicon-panel.svg', 'img/favicon-panel-32.png', 'img/apple-touch-icon-panel.png', '#070d17']
+};
+function setIcons(kind) {
+  const [svg, png, apple, color] = ICON_SETS[kind];
+  $('#icoSvg').href = svg; $('#icoPng').href = png; $('#icoApple').href = apple;
+  document.querySelector('meta[name=theme-color]').content = color;
+}
+function setTitle() {
+  document.title = (location.hash === '#panel' ? 'Panel del barbero | ' : 'Tarjeta de sellos | ') + cfg.shop;
+}
+
 function route() {
   const v = (location.hash || '#inicio').slice(1);
   const id = ['inicio', 'tarjeta', 'panel'].includes(v) ? v : 'inicio';
   document.querySelectorAll('.view').forEach(s => s.hidden = s.id !== id);
   document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + id));
   if (id !== 'panel') stopScan();
+  setIcons(id === 'panel' ? 'panel' : 'cliente'); setTitle();
   window.scrollTo(0, 0);
 }
 const sv = p => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -40,16 +62,15 @@ const ICONS = {
   poste:   { label: 'Poste de barbero', svg: sv('<rect x="8" y="4" width="8" height="16" rx="3"/><path d="M8 9l8 3M8 14l8 3M10 2h4M10 22h4"/>') }
 };
 // El ícono elegido se guarda en este dispositivo
-const iconOf = p => { let k = ''; try { k = localStorage.getItem('icon_' + p) || ''; } catch {} return ICONS[k] ? k : 'tijeras'; };
+const iconOf = p => { let k = ''; try { k = localStorage.getItem(K('icon_' + p)) || ''; } catch {} return ICONS[k] ? k : 'tijeras'; };
 
-/* Horario: cámbialo aquí y se actualiza en la página y en el "Abierto ahora" */
-const SCHEDULE = [
-  { label: 'Lunes a sábado', days: [1, 2, 3, 4, 5, 6], open: 10, close: 20 },
-  { label: 'Domingo', days: [0] }
-];
+/* Horario de la barbería (se edita desde el panel) */
+const schedule = () => cfg.sunday
+  ? [{ label: 'Todos los días', days: [0, 1, 2, 3, 4, 5, 6], open: cfg.open, close: cfg.close }]
+  : [{ label: 'Lunes a sábado', days: [1, 2, 3, 4, 5, 6], open: cfg.open, close: cfg.close }, { label: 'Domingo', days: [0] }];
 const DIAS = ['el domingo', 'el lunes', 'el martes', 'el miércoles', 'el jueves', 'el viernes', 'el sábado'];
 const fmt = h => String(h).padStart(2, '0') + ':00';
-const slot = d => SCHEDULE.find(s => s.days.includes(d) && s.open != null);
+const slot = d => schedule().find(s => s.days.includes(d) && s.open != null);
 
 function openState() {
   const now = new Date(), t = now.getHours() + now.getMinutes() / 60, s = slot(now.getDay());
@@ -63,15 +84,26 @@ function openState() {
 function paintHome() {
   const [open, text] = openState(), chip = $('#openNow');
   chip.textContent = text; chip.classList.toggle('open', open);
-  $('#hours').innerHTML = SCHEDULE.map(s =>
+  $('#hours').innerHTML = schedule().map(s =>
     `<li><span>${s.label}</span><b>${s.open != null ? fmt(s.open) + ' – ' + fmt(s.close) : 'Cerrado'}</b></li>`).join('');
   $('#heroLead').textContent = `Junta ${cfg.goal} sellos y gana: ${cfg.reward}.`;
+  const wa = cfg.whatsapp ? 'https://wa.me/' + digits(cfg.whatsapp) : '';
+  document.querySelectorAll('.wa').forEach(a => { a.hidden = !wa; if (wa) a.href = wa; });
+  const link = (u, t) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`;
+  $('#contact').innerHTML = [
+    ['Dirección', cfg.address && esc(cfg.address)],
+    ['WhatsApp', wa && link(wa, cfg.whatsapp)],
+    ['Instagram', cfg.instagram && link('https://instagram.com/' + cfg.instagram.replace('@', ''), cfg.instagram)]
+  ].filter(r => r[1]).map(r => `<li><span>${r[0]}</span><b>${r[1]}</b></li>`).join('') || '<li><span>Pronto más datos de contacto.</span></li>';
+  $('#svc').innerHTML = cfg.services.split('\n').map(l => l.split('|').map(x => x.trim())).filter(p => p[0]).map(p =>
+    `<li><div><b>${esc(p[0])}</b>${p[2] ? `<small>${esc(p[2])}</small>` : ''}</div>` +
+    (p[1] ? `<span class="price">${esc(p[1].startsWith('$') ? p[1] : '$' + p[1])}</span>` : '') + '</li>').join('');
 }
 setInterval(paintHome, 60000);
 
 function brand() {
   $('#brandName').textContent = cfg.shop;
-  document.title = 'Tarjeta de sellos | ' + cfg.shop;
+  setTitle();
   paintHome();
 }
 
@@ -91,21 +123,28 @@ if (matchMedia('(hover:hover) and (prefers-reduced-motion:no-preference)').match
 $('#iconPicker').addEventListener('click', e => {
   const b = e.target.closest('button[data-i]');
   if (!b || !card) return;
-  try { localStorage.setItem('icon_' + card.phone, b.dataset.i); } catch {}
+  try { localStorage.setItem(K('icon_' + card.phone), b.dataset.i); } catch {}
   renderCard();
 });
 
 /* ---------- Configuración (en vivo) ---------- */
-onSnapshot(doc(db, 'config', 'main'), s => {
-  cfg = { ...DEFAULTS, ...(s.exists() ? s.data() : {}) };
+let unsubShop = null;
+function watchShop() {
+  if (unsubShop) unsubShop();
+  unsubShop = null; cfg = { ...DEFAULTS };
+  if (shopId) unsubShop = onSnapshot(doc(db, 'shops', shopId), s => {
+    cfg = { ...DEFAULTS, ...(s.exists() ? s.data() : {}) };
+    brand(); renderCard(); renderPanel();
+  }, () => {});
   brand(); renderCard(); renderPanel();
-}, () => {});
+}
 
 /* ---------- Cliente: mi tarjeta ---------- */
 $('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const p = digits($('#phone').value), n = $('#name').value.trim();
   if (p.length < 10) return say('#cardMsg', 'Escribe tu número a 10 dígitos.');
+  if (!shopId) return say('#cardMsg', 'Abre el enlace de tu barbería para ver tu tarjeta.');
   try {
     const s = await getDoc(cref(p));
     if (!s.exists()) {
@@ -113,12 +152,12 @@ $('#loginForm').addEventListener('submit', async e => {
       await setDoc(cref(p), { name: n, phone: p, stamps: 0, redeemed: 0, since: today(),
         history: [{ date: today(), type: 'Tarjeta creada', t: Date.now() }] });
     }
-    me = p; try { localStorage.setItem('me_phone', p); } catch {}
+    me = p; try { localStorage.setItem(K('me_phone'), p); } catch {}
     say('#cardMsg', ''); watchCard();
   } catch (err) { say('#cardMsg', errText(err)); }
 });
 $('#logoutClient').addEventListener('click', () => {
-  me = ''; try { localStorage.removeItem('me_phone'); } catch {}
+  me = ''; try { localStorage.removeItem(K('me_phone')); } catch {}
   $('#loginForm').reset(); $('#nameWrap').hidden = true; watchCard();
 });
 
@@ -139,7 +178,7 @@ function renderCard() {
   const visits = c.history.filter(h => h.type === 'Sello').length;
 
   // Los sellos nuevos (que llegaron en vivo o desde la última visita) se animan
-  const seenKey = 'seen_' + c.phone;
+  const seenKey = K('seen_' + c.phone);
   let seen = 0; try { seen = +localStorage.getItem(seenKey) || 0; } catch {}
   seen = Math.min(seen, c.stamps);
 
@@ -187,14 +226,27 @@ $('#pinForm').addEventListener('submit', async e => {
 });
 $('#logoutAdmin').addEventListener('click', () => signOut(auth));
 
-onAuthStateChanged(auth, u => {
+onAuthStateChanged(auth, async u => {
   user = u;
   $('#navPanel').hidden = !u;   // el enlace al panel solo aparece con sesión iniciada
   if (unsubList) unsubList();
   unsubList = null; clients = [];
-  if (u) unsubList = onSnapshot(collection(db, 'clients'),
-    s => { clients = s.docs.map(d => d.data()).sort((a, b) => a.name.localeCompare(b.name)); renderPanel(); },
-    err => say('#panelMsg', errText(err)));
+  if (u) {
+    try {
+      const o = await getDoc(doc(db, 'owners', u.uid));
+      if (!o.exists()) say('#panelMsg', 'Tu cuenta aún no tiene una barbería asignada. Pídele a Krom Digital que la active.');
+      else {
+        if (o.data().shop !== shopId) {
+          shopId = o.data().shop; me = '';
+          try { localStorage.setItem('shop', shopId); } catch {}
+          watchShop(); watchCard();
+        }
+        unsubList = onSnapshot(collection(db, 'shops', shopId, 'clients'),
+          s => { clients = s.docs.map(d => d.data()).sort((a, b) => a.name.localeCompare(b.name)); renderPanel(); },
+          err => say('#panelMsg', errText(err)));
+      }
+    } catch (err) { say('#panelMsg', errText(err)); }
+  }
   renderPanel();
 });
 
@@ -205,6 +257,8 @@ function renderPanel() {
   $('#pinBox').hidden = !!user;
   $('#adminBox').hidden = !user;
   if (!user) return;
+  $('#shareLink').value = shopId ? new URL('index.html?b=' + shopId + '#tarjeta', location.href).href : '';
+  $('#panelLink').value = shopId ? new URL('panel.html?b=' + shopId, location.href).href : '';
   const g = cfg.goal, q = $('#search').value.trim().toLowerCase();
   const given = clients.reduce((n, c) => n + c.history.filter(h => h.type === 'Sello').length, 0);
   const prizes = clients.reduce((n, c) => n + c.redeemed, 0);
@@ -226,6 +280,8 @@ function renderPanel() {
   // No pisar lo que el barbero está escribiendo en Configuración
   if (!$('#cfgForm').contains(document.activeElement)) {
     $('#shop').value = cfg.shop; $('#goal').value = g; $('#reward').value = cfg.reward; $('#promoIn').value = cfg.promo || '';
+    $('#waIn').value = cfg.whatsapp; $('#addrIn').value = cfg.address; $('#igIn').value = cfg.instagram;
+    $('#openH').value = cfg.open; $('#closeH').value = cfg.close; $('#sundayIn').checked = !!cfg.sunday; $('#svcIn').value = cfg.services;
   }
 }
 
@@ -293,14 +349,22 @@ $('#cfgForm').addEventListener('submit', async e => {
   e.preventDefault();
   const g = parseInt($('#goal').value, 10);
   if (!(g >= 3 && g <= 20)) return say('#cfgMsg', 'Los sellos deben ser entre 3 y 20.');
+  const oh = parseInt($('#openH').value, 10), ch = parseInt($('#closeH').value, 10);
+  if (!(oh >= 0 && ch <= 24 && oh < ch)) return say('#cfgMsg', 'Revisa el horario: la apertura debe ser antes del cierre.');
+  if (!shopId) return say('#cfgMsg', 'Tu cuenta aún no tiene una barbería asignada.');
   try {
-    await setDoc(doc(db, 'config', 'main'), {
+    await setDoc(doc(db, 'shops', shopId), {
       shop: $('#shop').value.trim() || cfg.shop, goal: g,
-      reward: $('#reward').value.trim() || cfg.reward, promo: $('#promoIn').value.trim() });
+      reward: $('#reward').value.trim() || cfg.reward, promo: $('#promoIn').value.trim(),
+      whatsapp: $('#waIn').value.trim(), address: $('#addrIn').value.trim(), instagram: $('#igIn').value.trim(),
+      open: oh, close: ch, sunday: $('#sundayIn').checked, services: $('#svcIn').value.trim() || SERVICES
+    }, { merge: true });
     say('#cfgMsg', 'Cambios guardados.', true);
   } catch (err) { say('#cfgMsg', errText(err)); }
 });
 
+document.querySelectorAll('#shareLink, #panelLink').forEach(i => i.addEventListener('click', e => { e.target.select(); try { navigator.clipboard.writeText(e.target.value); } catch {} }));
+
 /* ---------- Inicio ---------- */
 window.addEventListener('hashchange', route);
-brand(); route(); watchCard(); renderPanel();
+watchShop(); route(); watchCard();

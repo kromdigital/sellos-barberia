@@ -73,8 +73,12 @@ h2{font:800 1.9rem/1 var(--head);margin:48px 0 16px}
 button:disabled{opacity:.35;cursor:not-allowed}
 .stack{display:grid;gap:14px;max-width:420px}
 label{display:grid;gap:6px;font-weight:600}
-input{width:100%;font:1rem var(--body);padding:13px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--ink-2);color:var(--bone)}
-input::placeholder{color:#6f83a0}
+input,textarea{width:100%;font:1rem var(--body);padding:13px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--ink-2);color:var(--bone)}
+input::placeholder,textarea::placeholder{color:#6f83a0}
+textarea{min-height:120px;resize:vertical}
+input[type=checkbox]{width:auto;accent-color:var(--red)}
+.check{display:flex;align-items:center;gap:10px}
+.btn[hidden]{display:none}
 .msg{min-height:1.4em;margin:0;color:#ffb4ad}
 .msg.ok{color:#9fe3b0}
 
