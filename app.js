@@ -22,7 +22,7 @@ const errText = e => e.code === 'permission-denied' ? 'No tienes permiso para ha
 
 const SERVICES = 'Corte clásico | 150 | Tijera o máquina, con acabado a navaja\nCorte y barba | 220 | El paquete completo, perfilado incluido\nAfeitado con toalla caliente | 130 | Navaja, vapor y bálsamo\nDiseño y perfilado | 100 | Líneas, cejas y detalles';
 const DEFAULTS = { shop: 'Tu Barbería', goal: 8, reward: 'Corte gratis', promo: 'Martes de barba 2x1.',
-  whatsapp: '', address: '', instagram: '', open: 10, close: 20, sunday: false, services: SERVICES };
+  whatsapp: '', address: '', instagram: '', mapsUrl: '', open: 10, close: 20, sunday: false, services: SERVICES };
 
 /* Barbería activa: viene del enlace (?b=nombre-de-la-barberia) y se recuerda en el dispositivo */
 let shopId = (new URLSearchParams(location.search).get('b') || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -79,7 +79,33 @@ function openState() {
   }
   return [false, 'Cerrado'];
 }
+/* Mapa: solo se aceptan enlaces de Google Maps (https) */
+const MAPS_OK = /^https:\/\/((www\.|maps\.)?google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs)/i;
+function mapQuery(url) {
+  let d = url; try { d = decodeURIComponent(url); } catch {}
+  let m = d.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || d.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (m) return `${m[1]},${m[2]}`;
+  m = d.match(/[?&](?:q|query)=([^&]+)/);
+  if (m) return m[1].replace(/\+/g, ' ');
+  m = d.match(/\/maps\/place\/([^/@?]+)/);
+  return m ? m[1].replace(/\+/g, ' ') : '';   // los enlaces cortos no traen datos: se usa la dirección
+}
+function paintMap() {
+  const ok = !!cfg.mapsUrl && MAPS_OK.test(cfg.mapsUrl);
+  $('#mapBox').hidden = !ok;
+  if (!ok) return;
+  const q = mapQuery(cfg.mapsUrl) || cfg.address, frame = $('#mapFrame');
+  $('#mapFrameBox').hidden = !q;
+  if (q && frame.dataset.q !== q) {   // solo recarga el mapa si cambió
+    frame.dataset.q = q;
+    frame.src = 'https://maps.google.com/maps?q=' + encodeURIComponent(q) + '&z=16&output=embed';
+  }
+  $('#mapAddr').textContent = cfg.address || 'Ver la ubicación en Google Maps';
+  $('#mapGo').href = cfg.mapsUrl;
+}
+
 function paintHome() {
+  paintMap();
   const [open, text] = openState(), chip = $('#openNow');
   chip.textContent = text; chip.classList.toggle('open', open);
   $('#hours').innerHTML = schedule().map(s =>
@@ -282,7 +308,7 @@ function renderPanel() {
   // No pisar lo que el barbero está escribiendo en Configuración
   if (!$('#cfgForm').contains(document.activeElement)) {
     $('#shop').value = cfg.shop; $('#goal').value = g; $('#reward').value = cfg.reward; $('#promoIn').value = cfg.promo || '';
-    $('#waIn').value = cfg.whatsapp; $('#addrIn').value = cfg.address; $('#igIn').value = cfg.instagram;
+    $('#mapIn').value = cfg.mapsUrl || ''; $('#waIn').value = cfg.whatsapp; $('#addrIn').value = cfg.address; $('#igIn').value = cfg.instagram;
     $('#openH').value = cfg.open; $('#closeH').value = cfg.close; $('#sundayIn').checked = !!cfg.sunday; $('#svcIn').value = cfg.services;
   }
 }
@@ -354,14 +380,17 @@ $('#cfgForm').addEventListener('submit', async e => {
   const oh = parseInt($('#openH').value, 10), ch = parseInt($('#closeH').value, 10);
   if (!(oh >= 0 && ch <= 24 && oh < ch)) return say('#cfgMsg', 'Revisa el horario: la apertura debe ser antes del cierre.');
   if (!shopId) return say('#cfgMsg', 'Tu cuenta aún no tiene una barbería asignada.');
+  const mu = $('#mapIn').value.trim();
+  if (mu && !MAPS_OK.test(mu)) return say('#cfgMsg', 'Pega un enlace de Google Maps (empieza con https://).');
   try {
     await setDoc(doc(db, 'shops', shopId), {
       shop: $('#shop').value.trim() || cfg.shop, goal: g,
       reward: $('#reward').value.trim() || cfg.reward, promo: $('#promoIn').value.trim(),
-      whatsapp: $('#waIn').value.trim(), address: $('#addrIn').value.trim(), instagram: $('#igIn').value.trim(),
+      whatsapp: $('#waIn').value.trim(), address: $('#addrIn').value.trim(), instagram: $('#igIn').value.trim(), mapsUrl: mu,
       open: oh, close: ch, sunday: $('#sundayIn').checked, services: $('#svcIn').value.trim() || SERVICES
     }, { merge: true });
-    say('#cfgMsg', 'Cambios guardados.', true);
+    say('#cfgMsg', /goo\.gl|maps\.app/i.test(mu) && !$('#addrIn').value.trim()
+      ? 'Guardado. Con enlaces cortos el mapa se arma con la dirección: escríbela arriba.' : 'Cambios guardados.', true);
   } catch (err) { say('#cfgMsg', errText(err)); }
 });
 
